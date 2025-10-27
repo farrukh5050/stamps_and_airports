@@ -1,4 +1,8 @@
 import requests
+import os
+
+USERNAME = os.getenv("AUTOCAB_USERNAME")
+PASSWORD = os.getenv("AUTOCAB_PASSWORD")
 
 
 class GhostSession:
@@ -17,8 +21,8 @@ class GhostSession:
         self.api_url = None
         self.base_url = "https://portal.autocab365.com"
         self.company_id = "3162"
-        self.username = "farakh"
-        self.password = "4Thmarch"
+        self.username = USERNAME
+        self.password = PASSWORD
         self._initialized = True
 
     def is_logged_in(self):
