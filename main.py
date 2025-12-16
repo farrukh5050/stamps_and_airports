@@ -26,6 +26,10 @@ def post_stamps(
         "type": "Debit",
     }
     response = requests.put(url, json=payload, headers=headers)
+    # 404 error means driver not found - skipping
+    if response.status_code == 404:
+        print(f"Driver with data_key {data_key} not found. Skipping.")
+        return
     response.raise_for_status()
 
 
@@ -35,7 +39,7 @@ def get_data_from_excel():
         pd.read_csv(
             "drivers.csv",
             usecols=["title", "data_key"],
-            dtype={"title": str, "data_key": str},
+            dtype={"title": str, "data_key": int},
         )
         .assign(title=lambda d: d["title"].str.strip())
         .set_index("title")["data_key"]  # <- Series: index=title, values=data_key
@@ -78,12 +82,13 @@ def get_data_from_excel():
 def get_stamps_airports():
     # Build a clean title -> data_key map (as strings)
     data_key_map = (
-        pd.read_csv(
-            "drivers.csv",
-            usecols=["title", "data_key"],
-            dtype={"title": str, "data_key": int},
+        pd.read_csv("drivers.csv", usecols=["title", "data_key"], dtype=str)
+        .assign(
+            title=lambda d: d["title"].str.strip(),
+            data_key=lambda d: d["data_key"]
+            .str.strip()
+            .str.replace(".0", "", regex=False),
         )
-        .assign(title=lambda d: d["title"].str.strip())
         .set_index("title")["data_key"]
     )
 
@@ -99,20 +104,17 @@ def get_stamps_airports():
         df_stamps["Callsign"]
         .apply(
             lambda x: (
-                str(int(x))
-                if isinstance(x, (int, float)) and x.is_integer()
-                else str(x)
+                str(int(x)) if isinstance(x, float) and x.is_integer() else str(x)
             )
         )
         .str.strip()
     )
+
     df_airports["Driver"] = (
         df_airports["Callsign.1"]
         .apply(
             lambda x: (
-                str(int(x))
-                if isinstance(x, (int, float)) and x.is_integer()
-                else str(x)
+                str(int(x)) if isinstance(x, float) and x.is_integer() else str(x)
             )
         )
         .str.strip()
@@ -134,12 +136,12 @@ def get_stamps_airports():
     df_stamps.to_excel(
         "stamps_output.xlsx",
         index=False,
-        columns=["Callsign", "Count", "Stamps", "data_key"],
+        columns=["Callsign", "data_key", "Count", "Stamps"],
     )
     df_airports.to_excel(
         "airports_output.xlsx",
         index=False,
-        columns=["Callsign.1", "Count.1", "Airports", "data_key"],
+        columns=["Callsign.1", "data_key", "Count.1", "Airports"],
     )
 
     return df_stamps, df_airports
@@ -155,11 +157,24 @@ if __name__ == "__main__":
 
     for _, row in df_stamps.iterrows():
         print("Posting to driver", row["Callsign"], "stamps amount £", row["Stamps"])
-    #     post_stamps(
-    #         base_url=url,
-    #         auth_token=auth_token,
-    #         data_key=row["data_key"],
-    #         description="STAMPS",
-    #         transactionTemplate="STAMP",
-    #         stamps_amount=row["stamps"],
-    #     )
+        post_stamps(
+            base_url=url,
+            auth_token=auth_token,
+            data_key=row["data_key"],
+            description="STAMPS",
+            transactionTemplate="STAMP",
+            stamps_amount=row["Stamps"],
+        )
+
+    for _, row in df_airports.iterrows():
+        print(
+            "Posting to driver", row["Callsign.1"], "Airport amount £", row["Airports"]
+        )
+        post_stamps(
+            base_url=url,
+            auth_token=auth_token,
+            data_key=row["data_key"],
+            description="AIRPORTS",
+            transactionTemplate="AIRPORTS",
+            stamps_amount=row["Airports"],
+        )
