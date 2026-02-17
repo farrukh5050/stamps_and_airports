@@ -46,31 +46,34 @@ def auto_find_scroll_container(driver):
 
 
 def harvest_visible_pairs(driver):
-    """
-    Reads ONLY what’s currently rendered (because rows are recycled).
-    Returns list of (data_key, title) tuples.
-    """
     out = []
     rows = driver.find_elements(By.CSS_SELECTOR, "gvs-body-row[data-key]")
     for r in rows:
         try:
             dk = r.get_attribute("data-key")
-            title = r.find_element(
-                By.CSS_SELECTOR, "gvs-body-cell:first-of-type .gvs-text-elipsis[title]"
-            ).get_attribute("title")
+            if not dk:
+                continue
+
+            try:
+                title = r.find_element(
+                    By.CSS_SELECTOR,
+                    "gvs-body-cell:first-of-type .gvs-text-elipsis[title]"
+                ).get_attribute("title")
+            except Exception:
+                title = r.find_element(
+                    By.CSS_SELECTOR,
+                    "gvs-body-cell:first-of-type .gvs-text-elipsis"
+                ).text
+
             out.append((dk, title))
+
         except StaleElementReferenceException:
             continue
         except Exception:
-            # Fallback if no title attr (rare): use text of first cell
-            try:
-                title = r.find_element(
-                    By.CSS_SELECTOR, "gvs-body-cell:first-of-type .gvs-text-elipsis"
-                ).text
-                out.append((dk, title))
-            except Exception:
-                continue
+            continue
+
     return out
+
 
 
 def scroll_step(driver, container, use_window):

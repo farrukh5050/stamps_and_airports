@@ -133,16 +133,16 @@ def get_stamps_airports():
     print("Unmatched AIRPORTS:", df_airports["data_key"].isna().sum())
 
     # Save with clear column order
-    df_stamps.to_excel(
-        "stamps_output.xlsx",
-        index=False,
-        columns=["Callsign", "data_key", "Count", "Stamps"],
-    )
-    df_airports.to_excel(
-        "airports_output.xlsx",
-        index=False,
-        columns=["Callsign.1", "data_key", "Count.1", "Airports"],
-    )
+    # df_stamps.to_excel(
+    #     "stamps_output.xlsx",
+    #     index=False,
+    #     columns=["Callsign", "data_key", "Count", "Stamps"],
+    # )
+    # df_airports.to_excel(
+    #     "airports_output.xlsx",
+    #     index=False,
+    #     columns=["Callsign.1", "data_key", "Count.1", "Airports"],
+    # )
 
     return df_stamps, df_airports
 

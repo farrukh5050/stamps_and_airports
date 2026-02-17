@@ -4,7 +4,6 @@ import os
 USERNAME = os.getenv("AUTOCAB_USERNAME")
 PASSWORD = os.getenv("AUTOCAB_PASSWORD")
 
-
 class GhostSession:
     _instance = None  # 🔒 Singleton instance
 
@@ -35,7 +34,7 @@ class GhostSession:
             "User-Agent": "Mozilla/5.0",
             "authentication-token": self.token,
         }
-        params = {"companyID": self.company_id, "text": "test"}
+        params = {"companyID": self.company_id}
         try:
             response = requests.get(check_url, headers=headers, params=params)
             return response.status_code == 200
