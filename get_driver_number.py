@@ -1,3 +1,4 @@
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -5,7 +6,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 import time
 import csv
-
+import os
+AUTOCAB_API_KEY = os.getenv("AUTOCAB_API_KEY")
 
 def wait_for_element(driver, by, value, timeout=20, click=True):
     """
@@ -75,7 +77,6 @@ def harvest_visible_pairs(driver):
     return out
 
 
-
 def scroll_step(driver, container, use_window):
     if use_window:
         driver.execute_script(
@@ -129,7 +130,7 @@ def save_to_csv(records, path="drivers.csv"):
         w = csv.DictWriter(f, fieldnames=["title", "data_key"])
         w.writeheader()
         w.writerows(records)
-    print(f"✅ Saved {len(records)} rows to {path}")
+    print(f" Saved {len(records)} rows to {path}")
 
 
 def login_to_ghost():
@@ -174,12 +175,33 @@ def login_to_ghost():
 def close_driver(driver):
     try:
         driver.quit()
-        print("✅WebDriver closed.")
+        print("WebDriver closed.")
     except Exception:
         print("WebDriver closing encountered an issue.")
 
+def main():
+    get_driver_url = "https://autocab-api.azure-api.net/driver/v1/drivers"
+    headers = {
+        "Ocp-Apim-Subscription-Key": AUTOCAB_API_KEY
+        }
+
+    response = requests.get(get_driver_url, headers=headers)
+    response.raise_for_status()
+
+    drivers = response.json()
+
+    driver_list = [{"data_key": d["id"], "title": d["callsign"]}
+                   for d in drivers]
+    
+    
+    with open("drivers.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["title", "data_key"])
+        w.writeheader()
+        w.writerows(driver_list)
 
 if __name__ == "__main__":
+    # main()
+
     driver = login_to_ghost()
 
     # WAIT FOR ALL THE DRIVERS TO LOAD
